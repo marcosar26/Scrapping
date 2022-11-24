@@ -26,10 +26,13 @@ public class Main {
             respuesta = InputManager.leerNumeroEnRango("Selecciona opción: ", 1, 6);
 
             switch (respuesta) {
-                default -> System.out.println("Respuesta inválida.");
+                default -> System.out.println("Opción inválida.");
                 case 1 -> addDominio();
                 case 2 -> listarDominios();
                 case 3 -> eliminarDominio();
+                case 4 -> analizarDominio(null);
+                case 5 -> analizarDominios();
+                case 6 -> System.out.println("Saliendo...");
             }
 
         } while (respuesta != 6);
@@ -134,14 +137,16 @@ public class Main {
                 case 2 -> System.out.println("El estado del dominio es: " + dominio.getEstado());
                 case 3 -> {
                 }
-                case 4 -> scrapear(dominio);
+                case 4 -> {
+                    dominio.setEstado(Estado.ANALIZANDO);
+                    final Dominio finalDominio = dominio;
+                    Thread thread = new Thread(() -> new Scrapear(finalDominio));
+                    thread.start();
+                }
+                case 5 -> System.out.println("Volviendo al menú...");
             }
 
         } while (opcion != 5);
-    }
-
-    private static void scrapear(Dominio dominio) {
-        dominio.setEstado(Estado.ANALIZANDO);
     }
 
     private static void analizarDominios() {
