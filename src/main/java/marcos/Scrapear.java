@@ -27,8 +27,6 @@ public final class Scrapear extends Thread {
         this.dominioDir = new File(dataDir, dominio.getNombre());
         this.html = new File(dominioDir, "html.txt");
         this.palabras.addAll(palabras);
-
-        System.out.println(List.of(palabras).size());
     }
 
     @Override
