@@ -4,7 +4,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -49,14 +48,14 @@ public class Main {
         do {
             url = InputManager.leerUrl("Introduce la URL del dominio: ");
 
-            try {
-                if (!UtilsManager.doesURLExist(new URL(url))) {
-                    System.out.println("La URL no es válida, vuelve a intentarlo.");
-                    url = "";
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+//            try {
+//                if (!UtilsManager.doesURLExist(new URL(url))) {
+//                    System.out.println("La URL no es válida, vuelve a intentarlo.");
+//                    url = "";
+//                }
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
 
         } while (url.isBlank() || url.isEmpty());
 
@@ -109,9 +108,13 @@ public class Main {
                 }
             }
 
-            if (dominio == null) System.out.println("No se ha encontrado el dominio.");
-            return;
+            if (dominio == null) {
+                System.out.println("No se ha encontrado el dominio.");
+                return;
+            }
         }
+
+        Set<String> palabras = new HashSet<>();
 
         int opcion;
         do {
@@ -136,11 +139,16 @@ public class Main {
                 }
                 case 2 -> System.out.println("El estado del dominio es: " + dominio.getEstado());
                 case 3 -> {
+                    palabras.clear();
+                    while (true) {
+                        String palabra = InputManager.leerCadena("Introduce la palabra a buscar: ");
+                        if (palabra.equalsIgnoreCase("null")) break;
+                        palabras.add(palabra);
+                    }
                 }
                 case 4 -> {
                     dominio.setEstado(Estado.ANALIZANDO);
-                    final Dominio finalDominio = dominio;
-                    Thread thread = new Thread(() -> new Scrapear(finalDominio));
+                    Thread thread = new Scrapear(dominio, palabras);
                     thread.start();
                 }
                 case 5 -> System.out.println("Volviendo al menú...");
