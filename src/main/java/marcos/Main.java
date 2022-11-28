@@ -4,6 +4,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -48,14 +49,14 @@ public class Main {
         do {
             url = InputManager.leerUrl("Introduce la URL del dominio: ");
 
-//            try {
-//                if (!UtilsManager.doesURLExist(new URL(url))) {
-//                    System.out.println("La URL no es válida, vuelve a intentarlo.");
-//                    url = "";
-//                }
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
+            try {
+                if (!UtilsManager.doesURLExist(new URL(url))) {
+                    System.out.println("La URL no es válida, vuelve a intentarlo.");
+                    url = "";
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
         } while (url.isBlank() || url.isEmpty());
 
@@ -159,7 +160,7 @@ public class Main {
 
     private static void analizarDominios() {
         for (Dominio dominio : dominios) {
-            if (!Objects.equals(Estado.SIN_ANALIZAR, dominio.getEstado())) {
+            if (Objects.equals(Estado.SIN_ANALIZAR, dominio.getEstado())) {
                 analizarDominio(dominio);
             }
         }
