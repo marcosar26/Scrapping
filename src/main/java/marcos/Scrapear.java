@@ -17,7 +17,7 @@ public final class Scrapear extends Thread {
     private final File dataDir = new File(".", "data");
     private final Dominio dominio;
     private final File dominioDir;
-    private String html;
+    private final File html;
     private final Set<String> palabras = new HashSet<>();
     private final Set<String> enlaces = new HashSet<>();
     private final Map<String, Integer> palabrasOcurrencias = new HashMap<>();
@@ -25,8 +25,8 @@ public final class Scrapear extends Thread {
     public Scrapear(Dominio dominio, Collection<String> palabras) {
         this.dominio = dominio;
         this.dominioDir = new File(dataDir, dominio.getNombre());
+        this.html = new File(dominioDir, "html.txt");
         this.palabras.addAll(palabras);
-        this.html = null;
 
         System.out.println(List.of(palabras).size());
     }
@@ -49,8 +49,19 @@ public final class Scrapear extends Thread {
             dominioDir.mkdir();
         }
 
+        if (!html.exists()) {
+            try {
+                html.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         try {
-            html = Jsoup.connect(dominio.getUrl()).get().html();
+            String html = Jsoup.connect(dominio.getUrl()).get().html();
+            if (html.length() > 0) {
+                FileUtils.writeStringToFile(this.html, html, StandardCharsets.UTF_8, false);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -60,7 +71,8 @@ public final class Scrapear extends Thread {
         for (String palabra : palabras) {
             if (palabra.isEmpty() || palabra.isBlank()) continue;
 
-            final List<String> cmd = List.of("java -jar ContarPalabras.jar", html, palabra);
+            // Necesitas tener instalado Java 17 (o una versión más reciente) para poder ejecutar el archivo
+            final List<String> cmd = List.of("java", "-jar", "ContarPalabras.jar", html.getAbsolutePath(), palabra);
 
             ProcessBuilder pb = new ProcessBuilder();
             pb.directory(new File("."));
@@ -74,15 +86,14 @@ public final class Scrapear extends Thread {
                 try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
                     String str;
                     while ((str = bufferedReader.readLine()) != null) {
-                        ocurrencias = Integer.parseInt(str);
+                        try {
+                            ocurrencias = Integer.parseInt(str);
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
                 }
 
-                if (palabrasOcurrencias.containsKey(palabra)) {
-                    palabrasOcurrencias.put(palabra, ocurrencias);
-                } else {
-                    palabrasOcurrencias.putIfAbsent(palabra, ocurrencias);
-                }
+                palabrasOcurrencias.putIfAbsent(palabra, ocurrencias);
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -91,8 +102,12 @@ public final class Scrapear extends Thread {
     }
 
     private void consultarEnlaces() {
-        Elements elements = Jsoup.parse(html).select("a[href]");
-        elements.forEach(element -> enlaces.add(element.attr("abs:href")));
+        try {
+            Elements elements = Jsoup.parse(html).select("a[href]");
+            elements.forEach(element -> enlaces.add(element.attr("abs:href")));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void generarResumen() {
@@ -106,7 +121,7 @@ public final class Scrapear extends Thread {
         sb.append(System.lineSeparator());
         sb.append("Nombre: ").append(dominio.getNombre()).append(" | URL: ").append(dominio.getUrl());
         sb.append(System.lineSeparator());
-        sb.append("Palabras buscadas: ").append(palabras);
+        sb.append("Palabras buscadas: ");
         sb.append(System.lineSeparator());
         for (String palabra : palabrasOcurrencias.keySet()) {
             sb.append("'").append(palabra).append("'").append(": ").append(palabrasOcurrencias.get(palabra).intValue());
